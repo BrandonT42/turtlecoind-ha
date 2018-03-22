@@ -11,6 +11,7 @@ const bodyparser = require('body-parser')
 function Self (opts) {
   opts = opts || {}
   if (!(this instanceof Self)) return new Self(opts)
+  this.node = opts.node || module.parent.exports
   this.bindPort = opts.bindPort || 11899
   this.bindIp = opts.bindIp || '0.0.0.0'
   this.app = express()
@@ -25,8 +26,12 @@ function Self (opts) {
   this.app.use(helmet())
   this.app.use(compression())
   this.app.get('/health', (request, response) => {
-    if (module.parent.exports.trigger === null || !module.parent.exports.synced) return response.sendStatus(500)
-    return response.sendStatus(200)
+    this.node._getHeight().then(() => {
+      if (this.node === null || !this.node.synced) return response.sendStatus(500)
+      return response.sendStatus(200)
+    }).catch(() => {
+      return response.sendStatus(500)
+    })
   })
 }
 inherits(Self, EventEmitter)
@@ -41,6 +46,5 @@ Self.prototype.stop = function () {
   this.app.stop()
   this.emit('stop')
 }
-
 
 module.exports = Self
