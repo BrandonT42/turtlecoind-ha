@@ -25,7 +25,7 @@ function Self (opts) {
   this.app.use(helmet())
   this.app.use(compression())
   this.app.get('/health', (request, response) => {
-    if (module.parent.exports.trigger === null && module.parent.exports.synced) return response.sendStatus(500)
+    if (module.parent.exports.trigger === null || !module.parent.exports.synced) return response.sendStatus(500)
     return response.sendStatus(200)
   })
 }
