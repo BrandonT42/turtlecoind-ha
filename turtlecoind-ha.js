@@ -44,6 +44,8 @@ const TurtleCoind = function (opts) {
   this.httpServer = new HTTPServer({
     bindIp: opts.httpBindIp,
     bindPort: opts.httpBindPort,
+    username: opts.httpUsername,
+    password: opts.httpPassword,
     node: this
   })
   this.httpServer.start()

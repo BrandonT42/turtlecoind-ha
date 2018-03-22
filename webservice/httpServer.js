@@ -7,11 +7,17 @@ const inherits = require('util').inherits
 const EventEmitter = require('events').EventEmitter
 const util = require('util')
 const bodyparser = require('body-parser')
+const basicAuth = require('express-basic-auth')
+const blockTargetTime = 30
 
 function Self (opts) {
   opts = opts || {}
   if (!(this instanceof Self)) return new Self(opts)
+  this.users = {}
   this.node = opts.node || module.parent.exports
+  this.username = opts.username || 'admin'
+  this.password = opts.password || 'password'
+  this.users[this.username] = this.password
   this.bindPort = opts.bindPort || 11899
   this.bindIp = opts.bindIp || '0.0.0.0'
   this.app = express()
@@ -25,7 +31,7 @@ function Self (opts) {
   })
   this.app.use(helmet())
   this.app.use(compression())
-  this.app.get('/health', (request, response) => {
+  this.app.get('/api/health', (request, response) => {
     this.node._getHeight().then(() => {
       if (this.node === null || !this.node.synced) return response.sendStatus(500)
       return response.sendStatus(200)
@@ -33,12 +39,31 @@ function Self (opts) {
       return response.sendStatus(500)
     })
   })
+  this.app.get('/api/getinfo', (request, response) => {
+    this.node._getInfo().then((data) => {
+      data.globalHashRate = Math.round(data.difficulty / blockTargetTime)
+      return response.json(data)
+    }).catch(() => {
+      return response.sendStatus(500)
+    })
+  })
+
+  // Requests past this section require a username & password
+  this.app.use(basicAuth({
+    users: this.users,
+    challenge: true,
+    realm: 'TurtleCoind High-Availability Wrapper'
+  }))
+  this.app.get('/api/restart', (request, response) => {
+    this.node.stop()
+    return response.sendStatus(200)
+  })
 }
 inherits(Self, EventEmitter)
 
 Self.prototype.start = function () {
   this.app.listen(this.bindPort, this.bindIp, () => {
-    this.emit('ready', this.bindIp, this.bindPort)
+    this.emit('start', this.bindIp, this.bindPort, this.username, this.password)
   })
 }
 
