@@ -24,8 +24,12 @@ function Self (opts) {
   })
   this.app.use(helmet())
   this.app.use(compression())
+  this.app.get('/health', (request, response) => {
+    if (module.parent.exports.trigger === null) return response.send(500)
+    return response.send(200)
+  })
 }
-inherts(Self, EventEmitter)
+inherits(Self, EventEmitter)
 
 Self.prototype.start = function () {
   this.app.listen(this.bindPort, this.bindIp, () => {

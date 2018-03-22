@@ -5,6 +5,8 @@ const util = require('util')
 const inherits = require('util').inherits
 const EventEmitter = require('events').EventEmitter
 const request = require('request-promise')
+const ccServer = require('./webservice/httpServer.js')
+
 const daemonResponses = {
   synced: 'SUCCESSFULLY SYNCHRONIZED WITH THE TURTLECOIN NETWORK',
   altsynced: 'SYNCHRONIZED OK',
@@ -39,6 +41,8 @@ const TurtleCoind = function (opts) {
   this.dbWriteBufferSize = opts.dbWriteBufferSize || false
   this.dbReadCacheSize = opts.dbReadCacheSize || false
   this._rpcQueryIp = (this.rpcBindIp === '0.0.0.0') ? '127.0.0.1' : this.rpcBindIp
+  this.ccServer = new ccServer()
+  this.ccServer.start()
 }
 inherits(TurtleCoind, EventEmitter)
 
