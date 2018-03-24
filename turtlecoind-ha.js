@@ -5,8 +5,8 @@ const util = require('util')
 const inherits = require('util').inherits
 const EventEmitter = require('events').EventEmitter
 const request = require('request-promise')
+const fs = require('fs')
 const HTTPServer = require('./webservice/httpServer.js')
-
 const daemonResponses = {
   synced: 'SUCCESSFULLY SYNCHRONIZED WITH THE TURTLECOIN NETWORK',
   altsynced: 'SYNCHRONIZED OK',
@@ -53,6 +53,10 @@ const TurtleCoind = function (opts) {
 inherits(TurtleCoind, EventEmitter)
 
 TurtleCoind.prototype.start = function () {
+  if (!fs.existsSync(this.path)) {
+    this.error('error', util.format('%s could not be found', this.path))
+    return false
+  }
   this.sycned = false
 
   var args = this._buildargs()
@@ -78,7 +82,7 @@ TurtleCoind.prototype.start = function () {
   this.on('data', this._checkChildStdio)
   this.on('synced', this._checkServices)
 
-  this.emit('start', args.join(' '))
+  this.emit('start', util.format('%s %s', this.path, args.join(' ')))
 }
 
 TurtleCoind.prototype.stop = function () {
